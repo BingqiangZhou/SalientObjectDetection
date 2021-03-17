@@ -9,11 +9,19 @@ from utils import Transfroms, calc_iou, softmax_to_label
 t = Transfroms([
     transforms.RandomVerticalFlip(p=0.5),
     transforms.RandomHorizontalFlip(p=0.5),
+<<<<<<< HEAD
     transforms.Resize([320, 320]),
     transforms.ToTensor(),
 ])
 
 dataset = SODDataset("../sod/data", transfrom=t)
+=======
+    transforms.Resize([512, 512]),
+    transforms.ToTensor(),
+])
+
+dataset = SODDataset("./sod_dataset", transfrom=t)
+>>>>>>> 8d3994cb17f714841e7a4f1e6ed517923926424c
 nums_data = len(dataset)
 index = int(nums_data * 0.8)
 test_dataset = data.Subset(dataset, range(index))
@@ -24,8 +32,13 @@ optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 loss_func = torch.nn.CrossEntropyLoss()
 
 gpu = 0
+<<<<<<< HEAD
 device = torch.device(f"cuda:{gpu}" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
+=======
+# device = torch.device(f"cuda:{gpu}" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
+>>>>>>> 8d3994cb17f714841e7a4f1e6ed517923926424c
 
 model = model.to(device)
 
