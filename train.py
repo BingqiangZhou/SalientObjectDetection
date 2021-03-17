@@ -1,5 +1,6 @@
 import torch
 from torch.utils import data
+import numpy as np
 import torchvision.transforms as transforms
 
 from dataset import SODDataset
@@ -9,19 +10,11 @@ from utils import Transfroms, calc_iou, softmax_to_label
 t = Transfroms([
     transforms.RandomVerticalFlip(p=0.5),
     transforms.RandomHorizontalFlip(p=0.5),
-<<<<<<< HEAD
     transforms.Resize([320, 320]),
     transforms.ToTensor(),
 ])
 
-dataset = SODDataset("../sod/data", transfrom=t)
-=======
-    transforms.Resize([512, 512]),
-    transforms.ToTensor(),
-])
-
-dataset = SODDataset("./sod_dataset", transfrom=t)
->>>>>>> 8d3994cb17f714841e7a4f1e6ed517923926424c
+dataset = SODDataset("../../sod/data", transfrom=t)
 nums_data = len(dataset)
 index = int(nums_data * 0.8)
 test_dataset = data.Subset(dataset, range(index))
@@ -32,21 +25,19 @@ optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 loss_func = torch.nn.CrossEntropyLoss()
 
 gpu = 0
-<<<<<<< HEAD
 device = torch.device(f"cuda:{gpu}" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
-=======
-# device = torch.device(f"cuda:{gpu}" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
->>>>>>> 8d3994cb17f714841e7a4f1e6ed517923926424c
 
 model = model.to(device)
 
 test_dataloader = data.DataLoader(test_dataset, batch_size=4, shuffle=True)
 val_dataloader = data.DataLoader(val_dataset, batch_size=4, shuffle=False)
 
-nums_epoch = 10
+nums_epoch = 30
 for i in range(nums_epoch):
+    losses = []
+    y_ious = []
+    pbr_y_ious = []
     for index, data in enumerate(test_dataloader):
         image, gt, salient_map = data
         gt = (gt * 255).long().squeeze_(dim=1)
@@ -61,14 +52,22 @@ for i in range(nums_epoch):
         loss = loss_func(y, gt) + loss_func(pbr_y, gt)
         loss.backward()
         optimizer.step()
-        
+
         y_label = softmax_to_label(y)
         pbr_y_label = softmax_to_label(pbr_y)
         y_iou = calc_iou(y_label, gt)
         pbr_y_iou = calc_iou(pbr_y_label, gt)
+        
+        losses.append(loss.item())
+        pbr_y_ious.append(pbr_y_iou.item())
+        y_ious.append(y_iou.item())
         print(f"train: epoch {i+1}, step {index + 1}, loss: {loss}, iou: {y_iou}, pbr iou: {pbr_y_iou}.")
     torch.save(model.state_dict(), f"./models/checkpoints.pth")
+    print(f"epoch {i+1} training end, mean loss: {np.mean(losses)}, iou: {np.mean(y_ious)}, pbr iou: {np.mean(pbr_y_ious)}.")
 
+    losses = []
+    y_ious = []
+    pbr_y_ious = []
     for index, data in enumerate(val_dataloader):
         image, gt, salient_map = data
         gt = (gt * 255).long().squeeze_(dim=1)
@@ -85,6 +84,10 @@ for i in range(nums_epoch):
             pbr_y_label = softmax_to_label(pbr_y)
             y_iou = calc_iou(y_label, gt)
             pbr_y_iou = calc_iou(pbr_y_label, gt)
+
+            losses.append(loss.item())
+            pbr_y_ious.append(pbr_y_iou.item())
+            y_ious.append(y_iou.item())
         print(f"val: step {index + 1}, loss: {loss}, iou: {y_iou}, pbr iou: {pbr_y_iou}.")
-        # loss = loss_func(y, gt)
+    print(f"epoch {i+1} val end, mean loss: {np.mean(losses)}, iou: {np.mean(y_ious)}, pbr iou: {np.mean(pbr_y_ious)}.")
         
