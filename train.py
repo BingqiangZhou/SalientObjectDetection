@@ -22,6 +22,7 @@ val_dataset = data.Subset(dataset, range(index, nums_data))
 
 model = SODNet(in_channels=4, out_channels=2, down_method="pooling")
 optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[10, 30, 50], gamma=0.1)
 loss_func = torch.nn.CrossEntropyLoss()
 
 gpu = 0
@@ -33,7 +34,7 @@ model = model.to(device)
 test_dataloader = data.DataLoader(test_dataset, batch_size=4, shuffle=True)
 val_dataloader = data.DataLoader(val_dataset, batch_size=4, shuffle=False)
 
-nums_epoch = 30
+nums_epoch = 50
 for i in range(nums_epoch):
     losses = []
     y_ious = []
@@ -62,6 +63,9 @@ for i in range(nums_epoch):
         pbr_y_ious.append(pbr_y_iou.item())
         y_ious.append(y_iou.item())
         print(f"train: epoch {i+1}, step {index + 1}, loss: {loss}, iou: {y_iou}, pbr iou: {pbr_y_iou}.")
+        # break
+    scheduler.step()
+    # print(optimizer.state_dict()['param_groups'][0]['lr']) # learning rate
     torch.save(model.state_dict(), f"./models/checkpoints.pth")
     print(f"epoch {i+1} training end, mean loss: {np.mean(losses)}, iou: {np.mean(y_ious)}, pbr iou: {np.mean(pbr_y_ious)}.")
 
@@ -89,5 +93,6 @@ for i in range(nums_epoch):
             pbr_y_ious.append(pbr_y_iou.item())
             y_ious.append(y_iou.item())
         print(f"val: step {index + 1}, loss: {loss}, iou: {y_iou}, pbr iou: {pbr_y_iou}.")
+        # break
     print(f"epoch {i+1} val end, mean loss: {np.mean(losses)}, iou: {np.mean(y_ious)}, pbr iou: {np.mean(pbr_y_ious)}.")
         
