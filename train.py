@@ -21,7 +21,8 @@ test_dataset = data.Subset(dataset, range(index))
 val_dataset = data.Subset(dataset, range(index, nums_data))
 
 model = SODNet(in_channels=4, out_channels=2, down_method="pooling")
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+# optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999))
 scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[10, 30, 50], gamma=0.1)
 loss_func = torch.nn.CrossEntropyLoss()
 
@@ -31,8 +32,9 @@ device = torch.device(f"cuda:{gpu}" if torch.cuda.is_available() else "cpu")
 
 model = model.to(device)
 
-test_dataloader = data.DataLoader(test_dataset, batch_size=4, shuffle=True)
-val_dataloader = data.DataLoader(val_dataset, batch_size=4, shuffle=False)
+batch_size = 8
+test_dataloader = data.DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+val_dataloader = data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
 nums_epoch = 50
 for i in range(nums_epoch):
