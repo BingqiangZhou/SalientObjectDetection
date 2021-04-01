@@ -1,8 +1,12 @@
 
+__pycache__
+
+models/
+
 *.pyc
 
 *.out
 
-models/
-
 test.py
+
+.DS_Store

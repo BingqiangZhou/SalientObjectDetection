@@ -1,0 +1,57 @@
+{
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++.exe 生成活动文件",
+            // "command": "D:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin\\g++.exe",
+            "command": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\Hostx64\\x64\\cl.exe",
+            // "command": "D:\\vs2015\\VC\\bin\\cl.exe",
+            // "command": "cl.exe",
+            "args": [
+                // "-g",
+                // "${file}",
+                // "-o",
+                // "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "/EHsc",
+                "/Zi",
+                "/Fe:",
+                // "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "${fileDirname}\\${fileBasenameNoExtension}.cpp"
+                // "-I", "D:\\vs2015\\VC\\include",
+                // "-I", "D:\\opencv\\build\\include",
+                // "-I", "D:\\opencv\\build\\include\\opencv2",
+                // "-L", "D:\\opencv\\build\\x64\\MinGW\\lib",
+                // "-l", "opencv_core451",
+                // "-l", "opencv_imgproc451",
+                // "-l", "opencv_imgcodecs451",
+                // "-l", "opencv_video451",
+                // "-l", "opencv_ml451",
+                // "-l", "opencv_highgui451",
+                // "-l", "opencv_objdetect451",
+                // "-l", "opencv_flann451",
+                // "-l", "opencv_imgcodecs451",
+                // "-l", "opencv_photo451",
+                // "-l", "opencv_videoio451",
+                // "-l", "opencv_features2d451",
+                // "-l", "opencv_dnn451",
+                // "-l", "opencv_stitching451",
+                // "-l", "opencv_calib3d451",
+                // "-l", "opencv_gapi451"
+            ],
+            "options": {
+                // "cwd": "D:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin"
+                // "cwd": "D:\\vs2015\\VC\bin"
+                "cwd": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.16.27023\\bin\\Hostx64\\x64",
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "调试器生成的任务。"
+        }
+    ],
+    "version": "2.0.0"
+}
