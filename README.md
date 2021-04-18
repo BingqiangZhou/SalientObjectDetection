@@ -21,7 +21,10 @@
 
 ### 3.1 数据集
 
-将[DUTS-TR](http://saliencydetection.net/duts)（5019张图像）、[DUTS-TE](http://saliencydetection.net/duts)（10553张图片）作为训练集（总共15572张图像），在其他数据集图像（共25615张）随机取1000张作为验证集。（包括[DUT-OMRON](http://saliencydetection.net/dut-omron/#org96c3bab)（5168张）、[ECSSD](http://www.cse.cuhk.edu.hk/leojia/projects/hsaliency/dataset.html)（1000张）、[HKU-IS](https://i.cs.hku.hk/~gbli/deep_saliency.html)（4447张）、[MSRA10K](https://mmcheng.net/msra10k/)（10000张）、[MSRA-B](https://mmcheng.net/msra10k/)（5000张））。
+- 训练集
+    将[DUTS-TR](http://saliencydetection.net/duts)（5019张图像）、[DUTS-TE](http://saliencydetection.net/duts)（10553张图片）作为训练集（总共15572张图像）。
+- 验证集
+    在[DUT-OMRON](http://saliencydetection.net/dut-omron/#org96c3bab)（5168张）、[ECSSD](http://www.cse.cuhk.edu.hk/leojia/projects/hsaliency/dataset.html)（1000张）、[HKU-IS](https://i.cs.hku.hk/~gbli/deep_saliency.html)（4447张）、[MSRA10K](https://mmcheng.net/msra10k/)（10000张）、[MSRA-B](https://mmcheng.net/msra10k/)（5000张））中（共25615张）随机取1000张作为验证集。
 
 ### 3.2 训练细节
 在两张1080 TI上训练，批次大小(batch size)设置为16，每迭代2000次，保存一次模型，
@@ -37,10 +40,10 @@
 加载修改后的模型初始化参数，可以加快损失下降速度（而且不只是快一点点。）如下图为分组卷积在两种不同训练方式下的损失变化。
 
 默认初始化：训练十几轮（每轮2000次迭代）从0.48降到0.4左右
-![](./figures/train_groupconv_nopretrain.png)
+![](./Figures/train_groupconv_nopretrain.png)
 
 修改后的模型初始化参数：训练三十几轮（每轮2000次迭代）从0.44左右降到0.06左右，十几轮就已经降到了0.1左右
-![](./figures/train_groupconv_pretrain.png)
+![](./Figures/train_groupconv_pretrain.png)
 
 ## 四、部署方案
 
