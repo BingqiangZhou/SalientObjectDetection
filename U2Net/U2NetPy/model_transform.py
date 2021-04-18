@@ -52,7 +52,7 @@ def load_model_from_onnx(onnx_path):
 # model_name = 'u2netp'
 # model = U2NETP(3,1)
 is_parallel_model = True
-model_path = "./saved_models/u2net/u2net_bce_itr_68000_train_0.505270_tar_0.054967.pth"
+model_path = "./saved_models/u2net/u2net_bce_itr_84000_train_0.467845_tar_0.049689.pth"
 # model_path = "./saved_models/u2net/u2net_bce_itr_58000_train_0.552608_tar_0.061580.pth"
 state_dict = torch.load(model_path, map_location="cpu")
 if is_parallel_model:
@@ -67,4 +67,6 @@ model_name = os.path.splitext(os.path.split(model_path)[-1])[0]
 # print(model_name, model, state_dict.keys())
 model.load_state_dict(state_dict)
 # model.cuda()
-model2onnx(model, f"./saved_models/{model_name}.onnx", input_size)
+onnx_model_path = f"./saved_models/{model_name}.onnx"
+model2onnx(model, onnx_model_path, input_size)
+print("model save to: ", onnx_model_path)
