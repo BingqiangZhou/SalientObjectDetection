@@ -2,16 +2,16 @@ import os
 import torch
 import torchvision
 
-from sod import U2NETP, U2NET
+from load_net import *
 
 # reference docs: https://pytorch.org/docs/stable/onnx.html#example-end-to-end-alexnet-from-pytorch-to-onnx
 
 
 def model2onnx(model, onnx_path, input_size, input_names=[ "input_image" ], output_names=[ "output_pred" ]):
 
-    dummy_input = torch.randn(*input_size, device='cuda')
+    dummy_input = torch.randn(*input_size, device='cpu')
     # model = torchvision.models.alexnet(pretrained=True).cuda()
-    torch.onnx.export(model, dummy_input, onnx_path, verbose=True, input_names=input_names, output_names=output_names)
+    torch.onnx.export(model, dummy_input, onnx_path, verbose=True, opset_version=11, input_names=input_names, output_names=output_names)
 
 def load_model_from_onnx(onnx_path):
     # onnx
@@ -47,14 +47,24 @@ def load_model_from_onnx(onnx_path):
     #########################################################################################
     pass
 
+# 注意：为了让部署时，只输出d0（side fuse的结果），导出模型前，先修改网络模型中的输出，只输出d0
 
-# model = torchvision.models.alexnet(pretrained=True).cuda()
-# torch.save(model.state_dict(), "alexnet.pth")
 # model_name = 'u2netp'
 # model = U2NETP(3,1)
-model_name = 'u2net'
+is_parallel_model = True
+model_path = "./saved_models/u2net/u2net_bce_itr_68000_train_0.505270_tar_0.054967.pth"
+# model_path = "./saved_models/u2net/u2net_bce_itr_58000_train_0.552608_tar_0.061580.pth"
+state_dict = torch.load(model_path, map_location="cpu")
+if is_parallel_model:
+    new_state_dict = {}
+    for key in state_dict.keys():
+        new_state_dict.update({key[7:]: state_dict[key]}) # remove "module." in key
+    state_dict.clear()
+    state_dict = new_state_dict
+input_size = (1, 3, 400, 400)
 model = U2NET(3,1)
-model_dir = os.path.join(os.getcwd(), 'saved_models', model_name + '.pth')
-model.load_state_dict(torch.load(model_dir))
-model.cuda()
-model2onnx(model, f"./saved_models/{model_name}.onnx", (1, 3, 400, 400))
+model_name = os.path.splitext(os.path.split(model_path)[-1])[0]
+# print(model_name, model, state_dict.keys())
+model.load_state_dict(state_dict)
+# model.cuda()
+model2onnx(model, f"./saved_models/{model_name}.onnx", input_size)

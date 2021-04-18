@@ -2,8 +2,7 @@ import os
 import torch
 import numpy as np
 
-from model import U2NET # full size version 173.6 MB
-from model import U2NETP # small version u2net 4.7 MB
+from load_net import *
 
 
 class U2Net():

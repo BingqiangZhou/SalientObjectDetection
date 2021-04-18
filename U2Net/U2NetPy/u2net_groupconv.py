@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class REBNCONV(nn.Module):
-    def __init__(self,in_ch=3,out_ch=3,dirate=1):
+    def __init__(self,in_ch=3,out_ch=3,dirate=1, groups=2):
         super(REBNCONV,self).__init__()
 
-        self.conv_s1 = nn.Conv2d(in_ch,out_ch,3,padding=1*dirate,dilation=1*dirate)
+        self.conv_s1 = nn.Conv2d(in_ch,out_ch,3,padding=1*dirate,dilation=1*dirate, groups=groups)
         self.bn_s1 = nn.BatchNorm2d(out_ch)
         self.relu_s1 = nn.ReLU(inplace=True)
 
@@ -32,7 +32,7 @@ class RSU7(nn.Module):#UNet07DRES(nn.Module):
     def __init__(self, in_ch=3, mid_ch=12, out_ch=3):
         super(RSU7,self).__init__()
 
-        self.rebnconvin = REBNCONV(in_ch,out_ch,dirate=1)
+        self.rebnconvin = REBNCONV(in_ch,out_ch,dirate=1, groups=1)
 
         self.rebnconv1 = REBNCONV(out_ch,mid_ch,dirate=1)
         self.pool1 = nn.MaxPool2d(2,stride=2,ceil_mode=True)

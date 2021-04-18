@@ -1,15 +1,11 @@
 import os
 import torch
-from torch._C import device
-import torchvision
 from torch.autograd import Variable
 import torch.nn as nn
-import torch.nn.functional as F
 
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 import torch.optim as optim
-import torchvision.transforms as standard_transforms
 
 import numpy as np
 import glob
@@ -22,10 +18,22 @@ from data_loader import ToTensor
 from data_loader import ToTensorLab
 from data_loader import SalObjDataset
 
-from u2net import U2NET, U2NETP
 
-gpu = "0, 2"
+# config
+# ----------------------------------------------------
+
+# gpu = "0, 2"
+gpu = '1, 3'
 os.environ['CUDA_VISIBLE_DEVICES'] = gpu
+epoch_num = 100000
+batch_size_train = 12
+save_frq = 2000 # save the model every 2000 iterations
+num_workers = 4
+pretrain = True
+
+from load_net import *
+
+model_name = 'u2net' #'u2netp'
 
 # ------- 1. define loss function --------
 
@@ -49,8 +57,6 @@ def muti_bce_loss_fusion(d0, d1, d2, d3, d4, d5, d6, labels_v):
 
 # ------- 2. set the directory of training dataset --------
 
-model_name = 'u2net' #'u2netp'
-
 data_dir = os.path.join('/raid/home/guiyan/bingqiangzhou/projects/sod/datas' + os.sep)
 # tra_image_dir = os.path.join('im_aug' + os.sep)
 # tra_label_dir = os.path.join('gt_aug' + os.sep)
@@ -64,13 +70,12 @@ image_ext = '.jpg'
 label_ext = '.png'
 
 model_dir = os.path.join(os.getcwd(), 'saved_models', model_name + os.sep)
-load_model_path = "/raid/home/guiyan/bingqiangzhou/projects/sod/codes/saved_models/u2net_groups2.pth"
+if conv == 'groupconv':
+    load_model_path = "./saved_models/u2net_dsonv.pth"
+elif conv == 'dsconv':
+    load_model_path = "./saved_models/u2net_dsconv.pth"
 
-epoch_num = 100000
-batch_size_train = 16
-batch_size_val = 1
 train_num = 0
-val_num = 0
 
 tra_img_name_list = glob.glob(data_dir + tra_image_dir + '*' + image_ext)
 
@@ -100,7 +105,7 @@ salobj_dataset = SalObjDataset(
         RescaleT(320),
         RandomCrop(288),
         ToTensorLab(flag=0)]))
-salobj_dataloader = DataLoader(salobj_dataset, batch_size=batch_size_train, shuffle=True, num_workers=4)
+salobj_dataloader = DataLoader(salobj_dataset, batch_size=batch_size_train, shuffle=True, num_workers=num_workers)
 
 # ------- 3. define model --------
 # define the net
@@ -109,11 +114,16 @@ if(model_name=='u2net'):
 elif(model_name=='u2netp'):
     net = U2NETP(3,1)
 
+
 if torch.cuda.is_available():
-    net.load_state_dict(torch.load(load_model_path))
+    if pretrain:
+        net.load_state_dict(torch.load(load_model_path))
+        print("load parameters from: ", load_model_path)
     net.cuda()
 else:
-    net.load_state_dict(torch.load(load_model_path, map_location='cpu'))
+    if pretrain:
+        net.load_state_dict(torch.load(load_model_path, map_location='cpu'))
+        print("load parameters from: ", load_model_path)
 
 device_ids = [i for i in range(len(gpu.split(',')))]
 print("use device: ", gpu)
@@ -130,7 +140,6 @@ ite_num = 0
 running_loss = 0.0
 running_tar_loss = 0.0
 ite_num4val = 0
-save_frq = 2000 # save the model every 2000 iterations
 
 for epoch in range(0, epoch_num):
     net.train()
@@ -173,7 +182,7 @@ for epoch in range(0, epoch_num):
         # torch.save(net.state_dict(), model_dir + model_name+"_bce_itr_%d_train_%3f_tar_%3f.pth" % (ite_num, running_loss / ite_num4val, running_tar_loss / ite_num4val))
 
         if ite_num % save_frq == 0:
-            torch.save(net.state_dict(), model_dir + model_name+"_bce_itr_%d_train_%3f_tar_%3f.pth" % (ite_num, running_loss / ite_num4val, running_tar_loss / ite_num4val))
+            torch.save(net.state_dict(), model_dir + model_name + conv +"_bce_itr_%d_train_%3f_tar_%3f.pth" % (ite_num, running_loss / ite_num4val, running_tar_loss / ite_num4val))
             running_loss = 0.0
             running_tar_loss = 0.0
             net.train()  # resume train
