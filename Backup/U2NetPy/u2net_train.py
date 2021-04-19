@@ -1,13 +1,15 @@
 import os
-import glob
 import torch
-import argparse
-import numpy as np
-import torch.nn as nn
 from torch.autograd import Variable
+import torch.nn as nn
+
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 import torch.optim as optim
+
+import numpy as np
+import glob
+import os
 
 from data_loader import Rescale
 from data_loader import RescaleT
@@ -16,51 +18,62 @@ from data_loader import ToTensor
 from data_loader import ToTensorLab
 from data_loader import SalObjDataset
 
-from nets import get_net
-from loss import muti_bce_loss_fusion
 
-# ------- config --------
+# config
+# ----------------------------------------------------
 
-parser = argparse.ArgumentParser(description='train u2net')
-parser.add_argument('-n', '--model_name', type=str, choices=['u2net', 'u2netp', 'u2net_groupconv', 'u2net_dsconv'], default="u2net_groupconv")
-parser.add_argument('-d', '--device_id_str', type=str, default='0')
-parser.add_argument('-e', '--epoch_num', type=int, default=100000)
-parser.add_argument('-b', '--batch_size', type=int, default=16)
-parser.add_argument('-s', '--save_frq', type=int, default=2000)
-parser.add_argument('-p', '--pretrain', type=bool, default=True)
-parser.add_argument('-m', '--pretrain_model_path', type=str, default=None)
-args = parser.parse_args()
+# gpu = "0, 2"
+gpu = '1, 3'
+os.environ['CUDA_VISIBLE_DEVICES'] = gpu
+epoch_num = 100000
+batch_size_train = 12
+save_frq = 2000 # save the model every 2000 iterations
+num_workers = 4
+pretrain = True
 
-device_ids = [i for i in range(len(args.device_id_str.split(',')))]
-os.environ['CUDA_VISIBLE_DEVICES'] = args.device_id_str
+from load_net import *
 
-epoch_num = args.epoch_num
-batch_size_train = args.batch_size
-save_frq = args.save_frq # save the model every 2000 iterations
-num_workers = args.batch_size // 4 * len(device_ids)
-num_workers = 1 if num_workers < 1 else num_workers
-pretrain = args.pretrain
-model_name = args.model_name
-pretrain_model_path = args.pretrain_model_path
+model_name = 'u2net' #'u2netp'
 
-print("train net: ", model_name)
-print("use device: ", args.device_id_str)
-print("epoch_num: ", epoch_num)
-print("batch_size: ", batch_size_train)
-print("num_workers: ", num_workers)
+# ------- 1. define loss function --------
 
-# ------- set the directory of training dataset --------
+bce_loss = nn.BCELoss(size_average=True)
+
+def muti_bce_loss_fusion(d0, d1, d2, d3, d4, d5, d6, labels_v):
+
+	loss0 = bce_loss(d0,labels_v)
+	loss1 = bce_loss(d1,labels_v)
+	loss2 = bce_loss(d2,labels_v)
+	loss3 = bce_loss(d3,labels_v)
+	loss4 = bce_loss(d4,labels_v)
+	loss5 = bce_loss(d5,labels_v)
+	loss6 = bce_loss(d6,labels_v)
+
+	loss = loss0 + loss1 + loss2 + loss3 + loss4 + loss5 + loss6
+	print("l0: %3f, l1: %3f, l2: %3f, l3: %3f, l4: %3f, l5: %3f, l6: %3f\n"%(loss0.data.item(),loss1.data.item(),loss2.data.item(),loss3.data.item(),loss4.data.item(),loss5.data.item(),loss6.data.item()))
+
+	return loss0, loss
+
+
+# ------- 2. set the directory of training dataset --------
 
 data_dir = os.path.join('/raid/home/guiyan/bingqiangzhou/projects/sod/datas' + os.sep)
+# tra_image_dir = os.path.join('im_aug' + os.sep)
+# tra_label_dir = os.path.join('gt_aug' + os.sep)
 tra_image_dir = os.path.join('images' + os.sep)
 tra_label_dir = os.path.join('gts' + os.sep)
+
+# tra_image_dir = os.path.join('DUTS-TE/DUTS-TE-Image' + os.sep)
+# tra_label_dir = os.path.join('DUTS-TE/DUTS-TE-Mask' + os.sep)
 
 image_ext = '.jpg'
 label_ext = '.png'
 
-model_dir = os.path.join(os.getcwd(), 'models', model_name + os.sep)
-if not os.path.exists(model_dir):
-    os.mkdir(model_dir)
+model_dir = os.path.join(os.getcwd(), 'saved_models', model_name + os.sep)
+if conv == 'groupconv':
+    load_model_path = "./saved_models/u2net_dsonv.pth"
+elif conv == 'dsconv':
+    load_model_path = "./saved_models/u2net_dsconv.pth"
 
 train_num = 0
 
@@ -69,6 +82,14 @@ tra_img_name_list = glob.glob(data_dir + tra_image_dir + '*' + image_ext)
 tra_lbl_name_list = []
 for img_path in tra_img_name_list:
 	img_name = os.path.splitext(os.path.split(img_path)[-1])[0]
+    # print(img_name)
+
+	# aaa = img_name.split(".")
+	# bbb = aaa[0:-1]
+	# imidx = bbb[0]
+	# for i in range(1, len(bbb)):
+	# 	imidx = imidx + "." + bbb[i]
+
 	tra_lbl_name_list.append(data_dir + tra_label_dir + img_name + label_ext)
 
 print("---")
@@ -86,11 +107,13 @@ salobj_dataset = SalObjDataset(
         ToTensorLab(flag=0)]))
 salobj_dataloader = DataLoader(salobj_dataset, batch_size=batch_size_train, shuffle=True, num_workers=num_workers)
 
-# ------- define model --------
+# ------- 3. define model --------
 # define the net
-net, load_model_path = get_net(model_name)
-if os.path.exists(pretrain_model_path):
-    load_model_path = pretrain_model_path
+if(model_name=='u2net'):
+    net = U2NET(3, 1)
+elif(model_name=='u2netp'):
+    net = U2NETP(3,1)
+
 
 if torch.cuda.is_available():
     if pretrain:
@@ -102,14 +125,16 @@ else:
         net.load_state_dict(torch.load(load_model_path, map_location='cpu'))
         print("load parameters from: ", load_model_path)
 
+device_ids = [i for i in range(len(gpu.split(',')))]
+print("use device: ", gpu)
 if len(device_ids) > 1:
     net = torch.nn.DataParallel(net, device_ids=device_ids)
 
-# ------- define optimizer --------
+# ------- 4. define optimizer --------
 print("---define optimizer...")
 optimizer = optim.Adam(net.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
 
-# ------- training process --------
+# ------- 5. training process --------
 print("---start training...")
 ite_num = 0
 running_loss = 0.0
@@ -157,7 +182,7 @@ for epoch in range(0, epoch_num):
         # torch.save(net.state_dict(), model_dir + model_name+"_bce_itr_%d_train_%3f_tar_%3f.pth" % (ite_num, running_loss / ite_num4val, running_tar_loss / ite_num4val))
 
         if ite_num % save_frq == 0:
-            torch.save(net.state_dict(), model_dir + model_name + model_name +"_bce_itr_%d_train_%3f_tar_%3f.pth" % (ite_num, running_loss / ite_num4val, running_tar_loss / ite_num4val))
+            torch.save(net.state_dict(), model_dir + model_name + conv +"_bce_itr_%d_train_%3f_tar_%3f.pth" % (ite_num, running_loss / ite_num4val, running_tar_loss / ite_num4val))
             running_loss = 0.0
             running_tar_loss = 0.0
             net.train()  # resume train
