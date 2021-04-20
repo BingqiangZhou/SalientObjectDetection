@@ -39,16 +39,18 @@ Mat U2Net::PreProcessImage(Mat image) {
 }
 
 Mat U2Net::PostProcessImage(Mat predict) {
-	const float* data = reinterpret_cast<const float*>(predict.data);
+	/*const float* data = reinterpret_cast<const float*>(predict.data);
 	Mat outImageFloat(this->netInputSize.width, this->netInputSize.height, CV_32FC1);
 	for (int col = 0; col < this->netInputSize.width; col++) {
 		for (int row = 0; row < this->netInputSize.height; row++) {
 			outImageFloat.at<float>(col, row) = *data;
 			data++;
 		}
-	}
-	Mat outImage;
-	convertScaleAbs(outImageFloat * 255, outImage);
+	}*/
+	/*vector<int> outSize{ this->netInputSize.width, this->netInputSize.height };
+	Mat outImage = predict.reshape(1, outSize);*/
+	Mat outImage = predict.reshape(1, this->netInputSize.height);
+	convertScaleAbs(outImage * 255, outImage);
 	resize(outImage, outImage, Size(this->curImageWidth, this->curImageHeight));
 	return outImage;
 }
@@ -77,7 +79,7 @@ Mat U2Net::PredictByMat(Mat image) {
 	this->net.setInput(imgNCHW);
 	Mat result = this->net.forward();
 	end = clock();
-	cout << "speed " << end - start << "ms" << endl;
+	cout << "inference speed " << end - start << "ms" << endl;
 	result = this->PostProcessImage(result);
 	return result;
 }
