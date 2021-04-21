@@ -51,7 +51,7 @@ print("num_workers: ", num_workers)
 
 # ------- set the directory of training dataset --------
 
-data_dir = os.path.join('/raid/home/guiyan/bingqiangzhou/projects/sod/datas' + os.sep)
+data_dir = os.path.join('bingqiangzhou/projects/sod/datas/test' + os.sep)
 tra_image_dir = os.path.join('images' + os.sep)
 tra_label_dir = os.path.join('gts' + os.sep)
 
